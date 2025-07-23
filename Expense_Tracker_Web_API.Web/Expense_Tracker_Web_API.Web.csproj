@@ -17,8 +17,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Expense_Tracker_Web_API.Services\Expense_Tracker_Web_API.Services.csproj" />
-    <Folder Include="wwwroot\" />
-    <Folder Include="Controllers\" />
-    <Compile Include="DependencyInjection.cs" />
   </ItemGroup>
 </Project>
