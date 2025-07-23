@@ -1,0 +1,6 @@
+namespace Expense_Tracker_Web_API.Repositories.Interfaces;
+
+public interface IGenericRepository<T>
+{
+    Task<bool> AddRecordAsync(T entity);
+}
