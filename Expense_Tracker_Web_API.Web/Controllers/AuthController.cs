@@ -26,4 +26,17 @@ public class AuthController(IAuthService authService) : ControllerBase
     }
     #endregion
 
+    #region Login User
+    [HttpPost("login")]
+    public async Task<IActionResult> LoginUser([FromBody] LoginVM loginVM)
+    {
+        ApiResponseVM<UserVM> apiResponseVM = await _authService.LoginUserAsync(loginVM);
+        return apiResponseVM.StatusCode switch
+        {
+            ApiStatusCode.Success => Ok(apiResponseVM.Data),
+            _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM.Message)
+        };
+    }
+    #endregion
+
 }

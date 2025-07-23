@@ -13,14 +13,13 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
     private readonly IUserRepository _userRepository = userRepository;
     #endregion
 
-
     #region Register User Async
     public async Task<ApiResponseVM<UserVM>> RegisterUserAsync(SignUpVM signUpVM)
     {
         #region Check If User Already Exists
-        if(await _userRepository.CheckForExistingUserAsync(signUpVM.Email))
+        if (_userRepository.CheckForExistingUserAsync(signUpVM.Email) != null)
         {
-            return ApiResponseFactory.Fail<UserVM>(ApiStatusCode.Conflict, "User with this email already exists");
+            return ApiResponseFactory.Fail<UserVM>(ApiStatusCode.Conflict, MessageHelper.UserAlreadyExists);
         }
         #endregion
         User newUser = new()
@@ -30,7 +29,7 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
             Passwordhash = PasswordHelper.HashPassword(signUpVM.Password)
         };
         bool isRegistered = await _userGR.AddRecordAsync(newUser);
-        if (!isRegistered) return ApiResponseFactory.Fail<UserVM>(ApiStatusCode.ServerError, "User registration failed");
+        if (!isRegistered) return ApiResponseFactory.Fail<UserVM>(ApiStatusCode.ServerError, MessageHelper.RegistrationFailed);
         UserVM userVM = new()
         {
             UserID = newUser.UserId,
@@ -38,7 +37,24 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
             Email = newUser.Email
         };
 
-        return ApiResponseFactory.Success(ApiStatusCode.Created, "User registered successfully", userVM);
+        return ApiResponseFactory.Success(ApiStatusCode.Created, MessageHelper.UserRegistered, userVM);
+    }
+    #endregion
+
+    #region Login User Async
+    public async Task<ApiResponseVM<UserVM>> LoginUserAsync(LoginVM loginVM)
+    {
+        User? existingUser = await _userRepository.CheckForExistingUserAsync(loginVM.EmailAddress);
+        if (existingUser != null && PasswordHelper.VerifyPassword(loginVM.Password, existingUser.Passwordhash))
+        {
+            return ApiResponseFactory.Success(ApiStatusCode.Success, MessageHelper.UserLoggedIn, new UserVM
+            {
+                UserID = existingUser.UserId,
+                Name = existingUser.Name,
+                Email = existingUser.Email
+            });
+        }
+        return ApiResponseFactory.Fail<UserVM>(ApiStatusCode.Unauthorized, MessageHelper.InvalidCredentials);
     }
     #endregion
 
