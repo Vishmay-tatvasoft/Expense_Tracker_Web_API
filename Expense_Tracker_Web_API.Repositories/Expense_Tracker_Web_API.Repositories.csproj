@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Interfaces\" />
+    <Folder Include="Implementations\" />
+    <Compile Include="Data\ExpenseTrackerWebAPIContext.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
+    <Compile Include="Models\Bill.cs" />
+    <Compile Include="Models\Payment.cs" />
+    <Compile Include="Models\User.cs" />
+    <Compile Include="Models\Reminder.cs" />
+    <Compile Include="Models\Budget.cs" />
+    <Compile Include="Models\Category.cs" />
+    <Compile Include="Models\Transaction.cs" />
+    <Compile Include="Models\Notification.cs" />
+  </ItemGroup>
+</Project>
