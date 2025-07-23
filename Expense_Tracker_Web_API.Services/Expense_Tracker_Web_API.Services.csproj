@@ -1,9 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\Expense_Tracker_Web_API.Repositories\Expense_Tracker_Web_API.Repositories.csproj" />
-    <Folder Include="ViewModels\" />
-    <Folder Include="Interfaces\" />
-    <Folder Include="Implementations\" />
   </ItemGroup>
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>

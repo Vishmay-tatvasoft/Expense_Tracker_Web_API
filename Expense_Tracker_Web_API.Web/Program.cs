@@ -1,4 +1,5 @@
-using Expense_Tracker_Web_API.Repositories.Data;
+
+using Expense_Tracker_Web_API.Web;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +11,7 @@ builder.Services.AddSwaggerGen();
 
 #region Connection String And DbContext Initialization
 var connectionString = builder.Configuration.GetConnectionString("ExpenseTrackerConnection");
-builder.Services.AddDbContext<ExpenseTrackerWebAPIContext>(options => options.UseNpgsql(connectionString));
+DependencyInjection.RegisterServices(builder.Configuration, builder.Services, connectionString!);
 #endregion
 
 var app = builder.Build();
