@@ -6,11 +6,12 @@ using Expense_Tracker_Web_API.Services.ViewModels;
 
 namespace Expense_Tracker_Web_API.Services.Implementations;
 
-public class AuthService(IGenericRepository<User> userGR, IUserRepository userRepository) : IAuthService
+public class AuthService(IGenericRepository<User> userGR, IUserRepository userRepository, IJwtTokenService jwtTokenService) : IAuthService
 {
     #region Configuration Settings
     private readonly IGenericRepository<User> _userGR = userGR;
     private readonly IUserRepository _userRepository = userRepository;
+    private readonly IJwtTokenService _jwtTokenService = jwtTokenService;
     #endregion
 
     #region Register User Async
@@ -47,14 +48,50 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
         User? existingUser = await _userRepository.CheckForExistingUserAsync(loginVM.EmailAddress);
         if (existingUser != null && PasswordHelper.VerifyPassword(loginVM.Password, existingUser.Passwordhash))
         {
+            #region Generate Access And Refresh Token
+            string accessToken = _jwtTokenService.GenerateJwtToken(existingUser.Name,existingUser.Email,existingUser.UserId.ToString());
+            string refreshToken = _jwtTokenService.GenerateRefreshTokenJwt(existingUser.Name,existingUser.Email,existingUser.UserId.ToString(),loginVM.RememberMe);
+            #endregion
+
             return ApiResponseFactory.Success(ApiStatusCode.Success, MessageHelper.UserLoggedIn, new UserVM
             {
                 UserID = existingUser.UserId,
                 Name = existingUser.Name,
-                Email = existingUser.Email
+                Email = existingUser.Email,
+                LoginData = new TokenResponseVM {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken,
+                    RememberMe = loginVM.RememberMe
+                }
             });
         }
         return ApiResponseFactory.Fail<UserVM>(ApiStatusCode.Unauthorized, MessageHelper.InvalidCredentials);
+    }
+    #endregion
+
+    #region Refresh Token Async
+    public async Task<ApiResponseVM<TokenResponseVM>> RefreshTokenAsync(RefreshTokenVM refreshTokenVM)
+    {
+        if(string.IsNullOrEmpty(refreshTokenVM.RefreshToken))
+        {
+            return ApiResponseFactory.Fail<TokenResponseVM>(ApiStatusCode.BadRequest,MessageHelper.EmptyRefreshToken);
+        }
+        if(_jwtTokenService.IsRefreshTokenValid(refreshTokenVM.RefreshToken))
+        {
+            int userID = Convert.ToInt32(_jwtTokenService.GetClaimValue(refreshTokenVM.RefreshToken, "UserID"));
+            User? user = await _userGR.GetRecordById(userID);
+            if(user != null)
+            {
+                #region Generate Access And Refresh Token
+                string newAccessToken = _jwtTokenService.GenerateJwtToken(user.Name, user.Email, user.UserId.ToString());
+                string newRefreshToken = _jwtTokenService.GenerateRefreshTokenJwt(user.Name, user.Email, user.UserId.ToString(), refreshTokenVM.RememberMe);
+                #endregion
+
+                return ApiResponseFactory.Success<TokenResponseVM>(ApiStatusCode.Success, MessageHelper.TokenRefreshed, new TokenResponseVM { RememberMe = refreshTokenVM.RememberMe, AccessToken = newAccessToken, RefreshToken = newRefreshToken });
+            }
+            return ApiResponseFactory.Fail<TokenResponseVM>(ApiStatusCode.Unauthorized, MessageHelper.UserNotExists);
+        }
+        return ApiResponseFactory.Fail<TokenResponseVM>(ApiStatusCode.Unauthorized, MessageHelper.InvalidRefreshToken);
     }
     #endregion
 

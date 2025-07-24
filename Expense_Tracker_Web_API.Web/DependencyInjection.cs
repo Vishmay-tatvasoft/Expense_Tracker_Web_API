@@ -1,12 +1,16 @@
 using System.Reflection;
+using System.Security.Claims;
+using System.Text;
 using Expense_Tracker_Web_API.Repositories.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Expense_Tracker_Web_API.Web;
 
 public class DependencyInjection
 {
-        public static void RegisterServices(IConfiguration configuration, IServiceCollection services, string connectionString)
+    public static void RegisterServices(IConfiguration configuration, IServiceCollection services, string connectionString)
     {
         services.AddControllers();
         // services.AddHttpClient();
@@ -23,6 +27,56 @@ public class DependencyInjection
                     .AllowAnyMethod()
                     .AllowCredentials());
         });
+        #region JWT Authentication
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(options =>
+        {
+            options.RequireHttpsMetadata = false;
+            options.SaveToken = true;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidIssuer = configuration["Jwt:Issuer"],
+                ValidAudience = configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
+                TokenDecryptionKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:EncryptKey"]!)),
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ClockSkew = TimeSpan.Zero,
+                RoleClaimType = ClaimTypes.Role,
+                NameClaimType = ClaimTypes.Name
+            };
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Cookies["ExpenseTrackerAccessToken"];
+                    if (!string.IsNullOrEmpty(accessToken))
+                    {
+                        context.Request.Headers["Authorization"] = "Bearer " + accessToken;
+                    }
+                    return Task.CompletedTask;
+                },
+                OnChallenge = context =>
+                {
+                    context.HandleResponse();
+                    context.Response.StatusCode = 401;
+                    return context.Response.WriteAsync("Unauthorized");
+                },
+                OnForbidden = context =>
+                {
+                    context.Response.StatusCode = 403;
+                    return context.Response.WriteAsync("Forbidden");
+                }
+            };
+        });
+        #endregion
+
         RegisterImplementations(services, "Expense_Tracker_Web_API.Repositories");
         RegisterImplementations(services, "Expense_Tracker_Web_API.Services");
     }

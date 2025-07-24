@@ -17,4 +17,11 @@ public class GenericRepository<T>(ExpenseTrackerWebAPIContext context) : IGeneri
         return await _context.SaveChangesAsync() > 0;
     }
     #endregion
+
+    #region Get Record By Id Async
+    public async Task<T?> GetRecordById(int id)
+    {
+        return await _dbSet.FindAsync(id);
+    }
+    #endregion
 }

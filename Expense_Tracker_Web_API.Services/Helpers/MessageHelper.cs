@@ -7,6 +7,7 @@ public static class MessageHelper
     #region Auth Service Messages
     public const string UserRegistered = "User registered successfully";
     public const string UserLoggedIn = "User logged in successfully";
+    public const string TokenRefreshed = "Token refreshed successfully";
     #endregion
 
     #endregion
@@ -17,6 +18,9 @@ public static class MessageHelper
     public const string RegistrationFailed = "User registration failed";
     public const string UserAlreadyExists = "User with this email already exists";
     public const string InvalidCredentials = "Invalid email or password";
+    public const string EmptyRefreshToken = "Refresh token is required";
+    public const string UserNotExists = "User is not present with this credentials";
+    public const string InvalidRefreshToken = "Invalid refresh token";
     #endregion
 
     #endregion
