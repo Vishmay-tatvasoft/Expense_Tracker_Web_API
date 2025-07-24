@@ -21,7 +21,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         return apiResponseVM.StatusCode switch
         {
             ApiStatusCode.Created => CreatedAtAction(nameof(RegisterUser), apiResponseVM.Data),
-            _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM.Message)
+            _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM)
         };
     }
     #endregion
