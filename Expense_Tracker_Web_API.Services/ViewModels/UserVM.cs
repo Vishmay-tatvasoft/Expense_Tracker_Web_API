@@ -5,4 +5,5 @@ public class UserVM
     public int UserID { get; set; }
     public string Name { get; set; }
     public string Email { get; set; }
+    public TokenResponseVM? LoginData { get; set; }
 }

@@ -7,10 +7,11 @@ namespace Expense_Tracker_Web_API.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(IAuthService authService) : ControllerBase
+public class AuthController(IAuthService authService, IJwtTokenService jwtTokenService) : ControllerBase
 {
     #region Configuration Settings
     private readonly IAuthService _authService = authService;
+    private readonly IJwtTokenService _jwtTokenService = jwtTokenService;
     #endregion
 
     #region Register User
@@ -31,11 +32,64 @@ public class AuthController(IAuthService authService) : ControllerBase
     public async Task<IActionResult> LoginUser([FromBody] LoginVM loginVM)
     {
         ApiResponseVM<UserVM> apiResponseVM = await _authService.LoginUserAsync(loginVM);
-        return apiResponseVM.StatusCode switch
+
+        if (apiResponseVM.StatusCode == ApiStatusCode.Success)
         {
-            ApiStatusCode.Success => Ok(apiResponseVM.Data),
-            _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM)
+            TokenResponseVM? tokenResponse = apiResponseVM.Data!.LoginData;
+            DateTime expirationTime = tokenResponse!.RememberMe ? DateTime.Now.AddDays(30) : DateTime.Now.AddDays(7);
+            SetCookie("ExpenseTrackerAccessToken", tokenResponse.AccessToken, expirationTime);
+            SetCookie("ExpenseTrackerRefreshToken", tokenResponse.RefreshToken, expirationTime);
+            return Ok(apiResponseVM);
         };
+        return StatusCode((int)apiResponseVM.StatusCode, apiResponseVM);
+    }
+    #endregion
+
+    #region Refresh Token
+    [HttpGet("refresh")]
+    public async Task<IActionResult> RefreshToken()
+    {
+        var refreshToken = Request.Cookies["ExpenseTrackerRefreshToken"];
+        RefreshTokenVM refreshTokenVM = new()
+        {
+            RefreshToken = refreshToken!,
+            RememberMe = Convert.ToBoolean(_jwtTokenService.GetClaimValue(refreshToken!, "RememberMe"))
+        };
+        ApiResponseVM<TokenResponseVM> apiResponseVM = await _authService.RefreshTokenAsync(refreshTokenVM);
+        if(apiResponseVM.StatusCode == ApiStatusCode.Success)
+        {
+            TokenResponseVM? tokenResponse = apiResponseVM.Data;
+            DateTime expirationTime = tokenResponse!.RememberMe ? DateTime.Now.AddDays(30) : DateTime.Now.AddDays(7);
+            SetCookie("ExpenseTrackerAccessToken", tokenResponse.AccessToken, expirationTime);
+            SetCookie("ExpenseTrackerRefreshToken", tokenResponse.RefreshToken, expirationTime);
+            return Ok(apiResponseVM);
+        }
+        return StatusCode((int)apiResponseVM.StatusCode, apiResponseVM);
+    }
+    #endregion
+
+    #region Set Cookie
+    private void SetCookie(string name, string value, DateTime expiryTime)
+    {
+        Response.Cookies.Append(name, value, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Expires = expiryTime
+        });
+    }
+    #endregion
+
+    #region Remove Cookie
+    private void RemoveCookie(string name)
+    {
+        Response.Cookies.Delete(name, new CookieOptions
+        {
+            Path = "/",
+            Secure = true,
+            SameSite = SameSiteMode.None
+        });
     }
     #endregion
 
