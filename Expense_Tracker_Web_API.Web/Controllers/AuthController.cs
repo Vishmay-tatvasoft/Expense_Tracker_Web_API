@@ -1,23 +1,28 @@
 using Expense_Tracker_Web_API.Services.Helpers;
 using Expense_Tracker_Web_API.Services.Interfaces;
 using Expense_Tracker_Web_API.Services.ViewModels;
+using Expense_Tracker_Web_API.Web.Helpers;
 using Microsoft.AspNetCore.Mvc;
+
 
 namespace Expense_Tracker_Web_API.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(IAuthService authService, IJwtTokenService jwtTokenService) : ControllerBase
+public class AuthController(IAuthService authService, IJwtTokenService jwtTokenService, IConfiguration config) : ControllerBase
 {
     #region Configuration Settings
     private readonly IAuthService _authService = authService;
     private readonly IJwtTokenService _jwtTokenService = jwtTokenService;
+    private readonly IConfiguration _config = config;
     #endregion
 
     #region Register User
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterUser([FromBody] SignUpVM signUpVM)
+    public async Task<IActionResult> RegisterUser([FromBody] string encryptedPayload)
     {
+        SignUpVM? signUpVM = PayloadHelper.DecryptAndDeserialize<SignUpVM>(encryptedPayload);
+        if (signUpVM == null) return BadRequest("Invalid encrypted payload");
         ApiResponseVM<UserVM> apiResponseVM = await _authService.RegisterUserAsync(signUpVM);
         return apiResponseVM.StatusCode switch
         {
