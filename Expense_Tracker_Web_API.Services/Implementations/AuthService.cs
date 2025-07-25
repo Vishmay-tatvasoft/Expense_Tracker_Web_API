@@ -22,7 +22,7 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
     public async Task<ApiResponseVM<UserVM>> RegisterUserAsync(SignUpVM signUpVM)
     {
         #region Check If User Already Exists
-        if (_userRepository.CheckForExistingUserAsync(signUpVM.EmailAddress) != null)
+        if (_userRepository.CheckForExistingUserAsync(signUpVM.EmailAddress) == null)
         {
             return ApiResponseFactory.Fail<UserVM>(ApiStatusCode.Conflict, MessageHelper.UserAlreadyExists);
         }
