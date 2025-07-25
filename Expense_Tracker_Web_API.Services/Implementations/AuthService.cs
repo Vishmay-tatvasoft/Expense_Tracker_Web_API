@@ -18,7 +18,7 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
     public async Task<ApiResponseVM<UserVM>> RegisterUserAsync(SignUpVM signUpVM)
     {
         #region Check If User Already Exists
-        if (_userRepository.CheckForExistingUserAsync(signUpVM.Email) != null)
+        if (_userRepository.CheckForExistingUserAsync(signUpVM.EmailAddress) != null)
         {
             return ApiResponseFactory.Fail<UserVM>(ApiStatusCode.Conflict, MessageHelper.UserAlreadyExists);
         }
@@ -26,7 +26,7 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
         User newUser = new()
         {
             Name = signUpVM.Name,
-            Email = signUpVM.Email,
+            Email = signUpVM.EmailAddress,
             Passwordhash = PasswordHelper.HashPassword(signUpVM.Password)
         };
         bool isRegistered = await _userGR.AddRecordAsync(newUser);
