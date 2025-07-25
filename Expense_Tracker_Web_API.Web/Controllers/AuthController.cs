@@ -75,9 +75,11 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
 
     #region Forgot Password
     [HttpPost("forgotpassword")]
-    public async Task<IActionResult> ForgotPassword(string encryptedPayload)
+    public async Task<IActionResult> ForgotPassword([FromBody] string encryptedPayload)
     {
-        ApiResponseVM<object> apiResponseVM = await _authService.ForgotPasswordAsync(PayloadHelper.DecryptAndDeserialize<string>(encryptedPayload));
+        // string encryptedPayload = await new StreamReader(Request.Body).ReadToEndAsync();
+        Dictionary<string,string>? email = PayloadHelper.DecryptAndDeserialize<Dictionary<string,string>>(encryptedPayload);
+        ApiResponseVM<object> apiResponseVM = await _authService.ForgotPasswordAsync(email["emailAddress"]);
         return apiResponseVM.StatusCode switch
         {
             ApiStatusCode.Success => Ok(apiResponseVM),

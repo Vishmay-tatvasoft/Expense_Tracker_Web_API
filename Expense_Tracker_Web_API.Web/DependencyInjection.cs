@@ -80,6 +80,7 @@ public class DependencyInjection
         });
         #endregion
         services.AddTransient<EmailService>();
+        services.AddMemoryCache();
 
         #region Payload Helper
         string secretKey = configuration["PayloadSecretKey"]!;

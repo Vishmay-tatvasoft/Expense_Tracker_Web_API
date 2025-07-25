@@ -18,6 +18,6 @@ public static class PayloadHelper
 
         Payload payload = new();
         string decryptedJson = payload.DecryptPayload(encryptedPayload, _secretKey);
-        return JsonConvert.DeserializeObject<T>(decryptedJson); 
+        return JsonConvert.DeserializeObject<T>(decryptedJson);
     }
 }

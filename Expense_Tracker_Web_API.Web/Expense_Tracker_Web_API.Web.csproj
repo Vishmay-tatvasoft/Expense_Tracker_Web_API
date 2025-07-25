@@ -18,6 +18,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Expense_Tracker_Web_API.Services\Expense_Tracker_Web_API.Services.csproj" />
-    <Folder Include="wwwroot\Templates\" />
   </ItemGroup>
 </Project>
