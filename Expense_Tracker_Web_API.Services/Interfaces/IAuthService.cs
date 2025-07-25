@@ -7,4 +7,5 @@ public interface IAuthService
     Task<ApiResponseVM<UserVM>> RegisterUserAsync(SignUpVM signUpVM);
     Task<ApiResponseVM<UserVM>> LoginUserAsync(LoginVM loginVM);
     Task<ApiResponseVM<TokenResponseVM>> RefreshTokenAsync(RefreshTokenVM refreshTokenVM);
+    Task<ApiResponseVM<object>> ForgotPasswordAsync(string email);
 }
