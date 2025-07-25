@@ -73,13 +73,18 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
     }
     #endregion
 
-    // #region Forgot Password
-    // [HttpPost("forgotpassword")]
-    // public async Task<IActionResult> ForgotPassword(string encryptedPayload)
-    // {
-    //     ApiResponseVM<object> apiResponseVM = await _authService.ForgotPasswordAsync()
-    // }
-    // #endregion
+    #region Forgot Password
+    [HttpPost("forgotpassword")]
+    public async Task<IActionResult> ForgotPassword(string encryptedPayload)
+    {
+        ApiResponseVM<object> apiResponseVM = await _authService.ForgotPasswordAsync(PayloadHelper.DecryptAndDeserialize<string>(encryptedPayload));
+        return apiResponseVM.StatusCode switch
+        {
+            ApiStatusCode.Success => Ok(apiResponseVM),
+            _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM)
+        };
+    }
+    #endregion
 
     #region Set Cookie
     private void SetCookie(string name, string value, DateTime expiryTime)
