@@ -104,7 +104,7 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
     {
         #region Check For Existing User
         User? existingUser = await _userRepository.CheckForExistingUserAsync(email); 
-        if(existingUser != null)
+        if(existingUser == null)
         {
             return ApiResponseFactory.Fail<object>(ApiStatusCode.BadRequest, MessageHelper.UserNotExists);
         }
