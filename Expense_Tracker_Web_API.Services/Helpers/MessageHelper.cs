@@ -21,6 +21,7 @@ public static class MessageHelper
     public const string EmptyRefreshToken = "Refresh token is required";
     public const string UserNotExists = "User is not present with this credentials";
     public const string InvalidRefreshToken = "Invalid refresh token";
+    public static string PasswordResetLinkSent = "Password reset instructions have been sent to your email.";
     #endregion
 
     #endregion

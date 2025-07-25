@@ -2,6 +2,8 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using Expense_Tracker_Web_API.Repositories.Data;
+using Expense_Tracker_Web_API.Services.Helpers;
+
 using Expense_Tracker_Web_API.Web.Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -77,12 +79,13 @@ public class DependencyInjection
             };
         });
         #endregion
+        services.AddTransient<EmailService>();
 
         #region Payload Helper
         string secretKey = configuration["PayloadSecretKey"]!;
         PayloadHelper.Initialize(secretKey);
         #endregion
-
+          
         RegisterImplementations(services, "Expense_Tracker_Web_API.Repositories");
         RegisterImplementations(services, "Expense_Tracker_Web_API.Services");
     }

@@ -3,15 +3,19 @@ using Expense_Tracker_Web_API.Repositories.Models;
 using Expense_Tracker_Web_API.Services.Helpers;
 using Expense_Tracker_Web_API.Services.Interfaces;
 using Expense_Tracker_Web_API.Services.ViewModels;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Expense_Tracker_Web_API.Services.Implementations;
 
-public class AuthService(IGenericRepository<User> userGR, IUserRepository userRepository, IJwtTokenService jwtTokenService) : IAuthService
+public class AuthService(IGenericRepository<User> userGR, IUserRepository userRepository, IJwtTokenService jwtTokenService, IMemoryCache cache, EmailService email) : IAuthService
 {
     #region Configuration Settings
     private readonly IGenericRepository<User> _userGR = userGR;
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IJwtTokenService _jwtTokenService = jwtTokenService;
+    private readonly IMemoryCache _cache = cache;
+    private readonly EmailService _email = email;
+    private readonly TimeSpan _otpExpiry = TimeSpan.FromMinutes(5);
     #endregion
 
     #region Register User Async
@@ -92,6 +96,32 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
             return ApiResponseFactory.Fail<TokenResponseVM>(ApiStatusCode.Unauthorized, MessageHelper.UserNotExists);
         }
         return ApiResponseFactory.Fail<TokenResponseVM>(ApiStatusCode.Unauthorized, MessageHelper.InvalidRefreshToken);
+    }
+    #endregion
+
+    #region Forgot Password Async
+    public async Task<ApiResponseVM<object>> ForgotPasswordAsync(string email)
+    {
+        #region Check For Existing User
+        User? existingUser = await _userRepository.CheckForExistingUserAsync(email); 
+        if(existingUser != null)
+        {
+            return ApiResponseFactory.Fail<object>(ApiStatusCode.BadRequest, MessageHelper.UserNotExists);
+        }
+        #endregion
+
+        #region Send OTP Via Email
+        string templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Templates", "PasswordResetTemplate.html");
+        string otp = OTPGenerator.GenerateNumericOtp();
+        _cache.Set($"otp:{email}",otp,_otpExpiry);
+        string emailTemplate = await File.ReadAllTextAsync(templatePath);
+        emailTemplate = emailTemplate.Replace("{{UserName}}", existingUser.Name)
+                                 .Replace("{{OTP}}", otp)
+                                 .Replace("{{CurrentYear}}", DateTime.Now.Year.ToString());
+        await _email.SendEmailAsync(existingUser.Email, "Reset Password", emailTemplate, true);
+        #endregion
+
+        return ApiResponseFactory.Success<object>(ApiStatusCode.Success,MessageHelper.PasswordResetLinkSent,existingUser.Email);
     }
     #endregion
 
