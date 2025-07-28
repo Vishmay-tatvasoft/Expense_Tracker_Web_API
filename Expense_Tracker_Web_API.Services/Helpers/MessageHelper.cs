@@ -8,6 +8,9 @@ public static class MessageHelper
     public const string UserRegistered = "User registered successfully";
     public const string UserLoggedIn = "User logged in successfully";
     public const string TokenRefreshed = "Token refreshed successfully";
+    public const string PasswordResetLinkSent = "Password reset instructions have been sent to your email.";
+    public const string PasswordChangedSuccessfully = "Your password has been updated successfully.";
+    public const string OTPVerified = "OTP verified successfully";
     #endregion
 
     #endregion
@@ -21,7 +24,8 @@ public static class MessageHelper
     public const string EmptyRefreshToken = "Refresh token is required";
     public const string UserNotExists = "User is not present with this credentials";
     public const string InvalidRefreshToken = "Invalid refresh token";
-    public static string PasswordResetLinkSent = "Password reset instructions have been sent to your email.";
+    public const string OTPExpired = "OTP has expired or was never requested";
+    public const string InvalidOTP = "Invalid OTP. Please try again.";
     #endregion
 
     #endregion

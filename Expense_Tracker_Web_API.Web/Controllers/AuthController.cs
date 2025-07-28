@@ -26,7 +26,7 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
         ApiResponseVM<UserVM> apiResponseVM = await _authService.RegisterUserAsync(signUpVM);
         return apiResponseVM.StatusCode switch
         {
-            ApiStatusCode.Created => CreatedAtAction(nameof(RegisterUser), apiResponseVM.Data),
+            ApiStatusCode.Created => CreatedAtAction(nameof(RegisterUser), apiResponseVM),
             _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM)
         };
     }
@@ -100,6 +100,20 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
             _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM)
         };
     }
+    #endregion
+
+    #region Change Password
+    [HttpPost("changePassword")]
+    public async Task<IActionResult> ChangePassword([FromBody] string encryptedPayload)
+    {
+        ChangePasswordVM? changePasswordVM = PayloadHelper.DecryptAndDeserialize<ChangePasswordVM>(encryptedPayload);
+        ApiResponseVM<object> apiResponseVM = await _authService.ChangePasswordAsync(changePasswordVM!);
+        return apiResponseVM.StatusCode switch
+        {
+            ApiStatusCode.Success => Ok(apiResponseVM),
+            _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM)
+        };
+    } 
     #endregion
 
     #region Set Cookie
