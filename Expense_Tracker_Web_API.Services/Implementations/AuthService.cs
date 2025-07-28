@@ -15,7 +15,7 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
     private readonly IJwtTokenService _jwtTokenService = jwtTokenService;
     private readonly IMemoryCache _cache = cache;
     private readonly EmailService _email = email;
-    private readonly TimeSpan _otpExpiry = TimeSpan.FromMinutes(5);
+    private readonly TimeSpan _otpExpiry = TimeSpan.FromMinutes(1);
     #endregion
 
     #region Register User Async
