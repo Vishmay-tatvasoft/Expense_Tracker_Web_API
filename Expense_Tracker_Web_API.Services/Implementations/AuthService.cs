@@ -53,8 +53,8 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
         if (existingUser != null && PasswordHelper.VerifyPassword(loginVM.Password, existingUser.Passwordhash))
         {
             #region Generate Access And Refresh Token
-            string accessToken = _jwtTokenService.GenerateJwtToken(existingUser.Name,existingUser.Email,existingUser.UserId.ToString());
-            string refreshToken = _jwtTokenService.GenerateRefreshTokenJwt(existingUser.Name,existingUser.Email,existingUser.UserId.ToString(),loginVM.RememberMe);
+            string accessToken = _jwtTokenService.GenerateJwtToken(existingUser.Name, existingUser.Email, existingUser.UserId.ToString());
+            string refreshToken = _jwtTokenService.GenerateRefreshTokenJwt(existingUser.Name, existingUser.Email, existingUser.UserId.ToString(), loginVM.RememberMe);
             #endregion
 
             return ApiResponseFactory.Success(ApiStatusCode.Success, MessageHelper.UserLoggedIn, new UserVM
@@ -62,7 +62,8 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
                 UserID = existingUser.UserId,
                 Name = existingUser.Name,
                 Email = existingUser.Email,
-                LoginData = new TokenResponseVM {
+                LoginData = new TokenResponseVM
+                {
                     AccessToken = accessToken,
                     RefreshToken = refreshToken,
                     RememberMe = loginVM.RememberMe
@@ -76,15 +77,15 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
     #region Refresh Token Async
     public async Task<ApiResponseVM<TokenResponseVM>> RefreshTokenAsync(RefreshTokenVM refreshTokenVM)
     {
-        if(string.IsNullOrEmpty(refreshTokenVM.RefreshToken))
+        if (string.IsNullOrEmpty(refreshTokenVM.RefreshToken))
         {
-            return ApiResponseFactory.Fail<TokenResponseVM>(ApiStatusCode.BadRequest,MessageHelper.EmptyRefreshToken);
+            return ApiResponseFactory.Fail<TokenResponseVM>(ApiStatusCode.BadRequest, MessageHelper.EmptyRefreshToken);
         }
-        if(_jwtTokenService.IsRefreshTokenValid(refreshTokenVM.RefreshToken))
+        if (_jwtTokenService.IsRefreshTokenValid(refreshTokenVM.RefreshToken))
         {
             int userID = Convert.ToInt32(_jwtTokenService.GetClaimValue(refreshTokenVM.RefreshToken, "UserID"));
             User? user = await _userGR.GetRecordById(userID);
-            if(user != null)
+            if (user != null)
             {
                 #region Generate Access And Refresh Token
                 string newAccessToken = _jwtTokenService.GenerateJwtToken(user.Name, user.Email, user.UserId.ToString());
@@ -103,8 +104,8 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
     public async Task<ApiResponseVM<object>> ForgotPasswordAsync(string email)
     {
         #region Check For Existing User
-        User? existingUser = await _userRepository.CheckForExistingUserAsync(email); 
-        if(existingUser == null)
+        User? existingUser = await _userRepository.CheckForExistingUserAsync(email);
+        if (existingUser == null)
         {
             return ApiResponseFactory.Fail<object>(ApiStatusCode.BadRequest, MessageHelper.UserNotExists);
         }
@@ -113,7 +114,7 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
         #region Send OTP Via Email
         string templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Templates", "PasswordResetTemplate.html");
         string otp = OTPGenerator.GenerateNumericOtp();
-        _cache.Set($"otp:{email}",otp,_otpExpiry);
+        _cache.Set($"otp:{email}", otp, _otpExpiry);
         string emailTemplate = await File.ReadAllTextAsync(templatePath);
         emailTemplate = emailTemplate.Replace("{{UserName}}", existingUser.Name)
                                  .Replace("{{OTP}}", otp)
@@ -121,26 +122,40 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
         await _email.SendEmailAsync(existingUser.Email, "Reset Password", emailTemplate, true);
         #endregion
 
-        return ApiResponseFactory.Success<object>(ApiStatusCode.Success,MessageHelper.PasswordResetLinkSent,existingUser.Email);
+        return ApiResponseFactory.Success<object>(ApiStatusCode.Success, MessageHelper.PasswordResetLinkSent, existingUser.Email);
     }
     #endregion
 
     #region OTP Verification Async
     public async Task<ApiResponseVM<object>> OTPVerificationAsync(OtpVerificationVM otpVerificationVM)
     {
-        if(!_cache.TryGetValue($"otp:{otpVerificationVM.EmailAddress}",out string? cachedOtp))
+        if (!_cache.TryGetValue($"otp:{otpVerificationVM.EmailAddress}", out string? cachedOtp))
         {
-            return ApiResponseFactory.Fail<object>(ApiStatusCode.BadRequest, "OTP has expired or was never requested");
+            return ApiResponseFactory.Fail<object>(ApiStatusCode.BadRequest, MessageHelper.OTPExpired);
         }
 
-        if(cachedOtp != otpVerificationVM.OTP)
+        if (cachedOtp != otpVerificationVM.OTP)
         {
-            return ApiResponseFactory.Fail<object>(ApiStatusCode.BadRequest, "Invalid OTP. Please try again.");
+            return ApiResponseFactory.Fail<object>(ApiStatusCode.BadRequest, MessageHelper.InvalidOTP);
         }
 
         _cache.Remove($"otp:{otpVerificationVM.EmailAddress}");
 
-        return ApiResponseFactory.Success<object>(ApiStatusCode.Success, "OTP verified successfully",null!);
+        return ApiResponseFactory.Success<object>(ApiStatusCode.Success, MessageHelper.OTPVerified, null!);
+    }
+    #endregion
+
+    #region Change Password Async
+    public async Task<ApiResponseVM<object>> ChangePasswordAsync(ChangePasswordVM changePasswordVM)
+    {
+        User? existingUser = await _userRepository.CheckForExistingUserAsync(changePasswordVM.EmailAddress);
+        existingUser!.Passwordhash = PasswordHelper.HashPassword(changePasswordVM.NewPassword);
+        bool isPasswordUpdated = await _userGR.UpdateRecordAsync(existingUser);
+        if (isPasswordUpdated)
+        {
+            return ApiResponseFactory.Success<object>(ApiStatusCode.Success, MessageHelper.PasswordChangedSuccessfully, null!);
+        }
+        return ApiResponseFactory.Fail<object>(ApiStatusCode.Unauthorized, MessageHelper.SomethingWentWrong);
     }
     #endregion
 
