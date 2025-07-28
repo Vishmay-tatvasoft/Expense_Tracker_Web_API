@@ -88,6 +88,20 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
     }
     #endregion
 
+    #region OTP Verification
+    [HttpPost("verifyOTP")]
+    public async Task<IActionResult> OTPVerification([FromBody] string encryptedPayload)
+    {
+        OtpVerificationVM? otpVerificationVM = PayloadHelper.DecryptAndDeserialize<OtpVerificationVM>(encryptedPayload);
+        ApiResponseVM<object> apiResponseVM = await _authService.OTPVerificationAsync(otpVerificationVM!);
+        return apiResponseVM.StatusCode switch 
+        {
+            ApiStatusCode.Success => Ok(apiResponseVM),
+            _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM)
+        };
+    }
+    #endregion
+
     #region Set Cookie
     private void SetCookie(string name, string value, DateTime expiryTime)
     {

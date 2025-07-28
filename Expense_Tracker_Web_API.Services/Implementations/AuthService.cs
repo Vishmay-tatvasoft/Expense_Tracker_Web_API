@@ -125,4 +125,23 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
     }
     #endregion
 
+    #region OTP Verification Async
+    public async Task<ApiResponseVM<object>> OTPVerificationAsync(OtpVerificationVM otpVerificationVM)
+    {
+        if(!_cache.TryGetValue($"otp:{otpVerificationVM.EmailAddress}",out string? cachedOtp))
+        {
+            return ApiResponseFactory.Fail<object>(ApiStatusCode.BadRequest, "OTP has expired or was never requested");
+        }
+
+        if(cachedOtp != otpVerificationVM.OTP)
+        {
+            return ApiResponseFactory.Fail<object>(ApiStatusCode.BadRequest, "Invalid OTP. Please try again.");
+        }
+
+        _cache.Remove($"otp:{otpVerificationVM.EmailAddress}");
+
+        return ApiResponseFactory.Success<object>(ApiStatusCode.Success, "OTP verified successfully",null!);
+    }
+    #endregion
+
 }
