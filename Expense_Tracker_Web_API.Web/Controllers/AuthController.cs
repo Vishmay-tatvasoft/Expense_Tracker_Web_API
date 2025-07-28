@@ -34,9 +34,10 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
 
     #region Login User
     [HttpPost("login")]
-    public async Task<IActionResult> LoginUser([FromBody] LoginVM loginVM)
+    public async Task<IActionResult> LoginUser([FromBody] string encryptedPayload)
     {
-        ApiResponseVM<UserVM> apiResponseVM = await _authService.LoginUserAsync(loginVM);
+        LoginVM? loginVM = PayloadHelper.DecryptAndDeserialize<LoginVM>(encryptedPayload);
+        ApiResponseVM<UserVM> apiResponseVM = await _authService.LoginUserAsync(loginVM!);
 
         if (apiResponseVM.StatusCode == ApiStatusCode.Success)
         {
