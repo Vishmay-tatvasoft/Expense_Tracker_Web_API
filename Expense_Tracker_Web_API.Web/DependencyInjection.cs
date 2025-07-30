@@ -17,6 +17,7 @@ public class DependencyInjection
     {
         services.AddControllers();
         // services.AddHttpClient();
+        services.AddHttpContextAccessor();
 
         services.AddDbContext<ExpenseTrackerWebAPIContext>(options =>
             options.UseNpgsql(connectionString)

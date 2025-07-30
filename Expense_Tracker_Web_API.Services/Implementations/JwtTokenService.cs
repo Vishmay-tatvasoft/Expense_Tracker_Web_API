@@ -91,6 +91,7 @@ public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
     {
         if (string.IsNullOrEmpty(token))
             return (false, null, null)!; // missing
+        ClaimsPrincipal principal = null!;
         try
         {
             JwtSecurityTokenHandler tokenHandler = new();
@@ -109,16 +110,16 @@ public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
                 ClockSkew = TimeSpan.Zero
             };
 
-            ClaimsPrincipal principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+            principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
             return (true, false, principal); // valid and not expired
         }
         catch (SecurityTokenExpiredException)
         {
-            return (false, true, null)!; // not valid and expired
+            return (false, true, principal)!; // not valid and expired
         }
         catch
         {
-            return (false, null, null)!; // malformed token
+            return (false, null, principal)!; // malformed token
         }
 
     }

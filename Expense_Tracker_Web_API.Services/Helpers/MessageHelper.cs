@@ -11,6 +11,7 @@ public static class MessageHelper
     public const string PasswordResetLinkSent = "Password reset instructions have been sent to your email.";
     public const string PasswordChangedSuccessfully = "Your password has been updated successfully.";
     public const string OTPVerified = "OTP verified successfully";
+    public const string ValidAccessToken = "Access token is valid.";
     #endregion
 
     #endregion
@@ -26,6 +27,9 @@ public static class MessageHelper
     public const string InvalidRefreshToken = "Invalid refresh token";
     public const string OTPExpired = "OTP has expired or was never requested";
     public const string InvalidOTP = "Invalid OTP. Please try again.";
+    public const string MissingTokens = "Access token or refresh token is missing.";
+    public const string ExpiredAccessToken = "Access token has expired. Please refresh the token.";
+    public const string InvalidAccessToken = "Invalid token. Please log in again.";
     #endregion
 
     #endregion

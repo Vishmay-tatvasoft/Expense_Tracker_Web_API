@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Expense_Tracker_Web_API.Services.Helpers;
 using Expense_Tracker_Web_API.Services.Interfaces;
 using Expense_Tracker_Web_API.Services.ViewModels;
@@ -51,6 +52,17 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
     }
     #endregion
 
+    #region Validate Token
+    [HttpGet("validate")]
+    public async Task<IActionResult> ValidateToken()
+    {
+        string? accessToken = Request.Cookies["ExpenseTrackerAccessToken"];
+        string? refreshToken = Request.Cookies["ExpenseTrackerRefreshToken"];
+        ApiResponseVM<object> apiResponseVM = await _authService.ValidateAccessToken(accessToken, refreshToken);
+        return StatusCode((int)apiResponseVM.StatusCode, apiResponseVM);
+    }
+    #endregion
+
     #region Refresh Token
     [HttpGet("refresh")]
     public async Task<IActionResult> RefreshToken()
@@ -62,7 +74,7 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
             RememberMe = Convert.ToBoolean(_jwtTokenService.GetClaimValue(refreshToken!, "RememberMe"))
         };
         ApiResponseVM<TokenResponseVM> apiResponseVM = await _authService.RefreshTokenAsync(refreshTokenVM);
-        if(apiResponseVM.StatusCode == ApiStatusCode.Success)
+        if (apiResponseVM.StatusCode == ApiStatusCode.Success)
         {
             TokenResponseVM? tokenResponse = apiResponseVM.Data;
             DateTime expirationTime = tokenResponse!.RememberMe ? DateTime.Now.AddDays(30) : DateTime.Now.AddDays(7);
@@ -79,7 +91,7 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
     public async Task<IActionResult> ForgotPassword([FromBody] string encryptedPayload)
     {
         // string encryptedPayload = await new StreamReader(Request.Body).ReadToEndAsync();
-        Dictionary<string,string>? email = PayloadHelper.DecryptAndDeserialize<Dictionary<string,string>>(encryptedPayload);
+        Dictionary<string, string>? email = PayloadHelper.DecryptAndDeserialize<Dictionary<string, string>>(encryptedPayload);
         ApiResponseVM<object> apiResponseVM = await _authService.ForgotPasswordAsync(email["emailAddress"]);
         return apiResponseVM.StatusCode switch
         {
@@ -95,7 +107,7 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
     {
         OtpVerificationVM? otpVerificationVM = PayloadHelper.DecryptAndDeserialize<OtpVerificationVM>(encryptedPayload);
         ApiResponseVM<object> apiResponseVM = await _authService.OTPVerificationAsync(otpVerificationVM!);
-        return apiResponseVM.StatusCode switch 
+        return apiResponseVM.StatusCode switch
         {
             ApiStatusCode.Success => Ok(apiResponseVM),
             _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM)
@@ -114,7 +126,7 @@ public class AuthController(IAuthService authService, IJwtTokenService jwtTokenS
             ApiStatusCode.Success => Ok(apiResponseVM),
             _ => StatusCode((int)apiResponseVM.StatusCode, apiResponseVM)
         };
-    } 
+    }
     #endregion
 
     #region Set Cookie

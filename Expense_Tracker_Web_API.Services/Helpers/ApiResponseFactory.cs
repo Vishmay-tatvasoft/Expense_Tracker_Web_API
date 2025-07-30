@@ -9,4 +9,7 @@ public static class ApiResponseFactory
 
     public static ApiResponseVM<T> Fail<T>(ApiStatusCode statusCode, string message) =>
         new(statusCode, message, default);
+    
+    public static ApiResponseVM<T> Fail<T>(ApiStatusCode statusCode, string message, T data) =>
+        new(statusCode, message, data);
 }

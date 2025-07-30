@@ -10,4 +10,5 @@ public interface IAuthService
     Task<ApiResponseVM<object>> ForgotPasswordAsync(string email);
     Task<ApiResponseVM<object>> OTPVerificationAsync(OtpVerificationVM otpVerificationVM);
     Task<ApiResponseVM<object>> ChangePasswordAsync(ChangePasswordVM changePasswordVM);
+    Task<ApiResponseVM<object>> ValidateAccessToken(string? accessToken, string? refreshToken);
 }

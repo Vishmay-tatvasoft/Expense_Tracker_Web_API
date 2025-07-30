@@ -1,13 +1,15 @@
+using System.Security.Claims;
 using Expense_Tracker_Web_API.Repositories.Interfaces;
 using Expense_Tracker_Web_API.Repositories.Models;
 using Expense_Tracker_Web_API.Services.Helpers;
 using Expense_Tracker_Web_API.Services.Interfaces;
 using Expense_Tracker_Web_API.Services.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Expense_Tracker_Web_API.Services.Implementations;
 
-public class AuthService(IGenericRepository<User> userGR, IUserRepository userRepository, IJwtTokenService jwtTokenService, IMemoryCache cache, EmailService email) : IAuthService
+public class AuthService(IGenericRepository<User> userGR, IUserRepository userRepository, IJwtTokenService jwtTokenService, IMemoryCache cache, EmailService email, IHttpContextAccessor httpContextAccessor) : IAuthService
 {
     #region Configuration Settings
     private readonly IGenericRepository<User> _userGR = userGR;
@@ -15,6 +17,7 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
     private readonly IJwtTokenService _jwtTokenService = jwtTokenService;
     private readonly IMemoryCache _cache = cache;
     private readonly EmailService _email = email;
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     private readonly TimeSpan _otpExpiry = TimeSpan.FromMinutes(1);
     #endregion
 
@@ -159,4 +162,49 @@ public class AuthService(IGenericRepository<User> userGR, IUserRepository userRe
     }
     #endregion
 
+    #region Validate Access Token Async
+    public async Task<ApiResponseVM<object>> ValidateAccessToken(string? accessToken, string? refreshToken)
+    {
+        #region Missing Access Token Or Refresh Token 
+        if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return ApiResponseFactory.Fail<object>(ApiStatusCode.BadRequest, MessageHelper.MissingTokens);
+        }   
+        #endregion
+
+        (bool? isValid, bool? isExpired, ClaimsPrincipal _) = _jwtTokenService.ValidateToken(accessToken!);
+
+        #region If Access Token Is Expired
+        if (isExpired == true)
+        {
+            return ApiResponseFactory.Fail<object>(ApiStatusCode.Unauthorized,MessageHelper.ExpiredAccessToken, new { IsValid = isValid, IsExpired = isExpired });
+        }
+        #endregion
+
+        #region If Access Token Is Tampered Or Malformed
+        if ((bool)!isValid && isExpired == null)
+        {
+            RemoveCookie("ExpenseTrackerAccessToken");
+            RemoveCookie("ExpenseTrackerRefreshToken");
+
+            return ApiResponseFactory.Fail<object>(ApiStatusCode.Unauthorized, MessageHelper.InvalidAccessToken,new { IsValid = isValid, IsExpired = isExpired });
+        }
+        #endregion
+        bool rememberMe = Convert.ToBoolean(_jwtTokenService.GetClaimValue(refreshToken!, "RememberMe"));
+
+        return ApiResponseFactory.Success<object>(ApiStatusCode.Success, MessageHelper.ValidAccessToken, new { IsValid = isValid, IsExpired = isExpired, RememberMe = rememberMe });
+    }
+    #endregion
+
+    #region Remove Cookie
+    private void RemoveCookie(string name)
+    {
+        _httpContextAccessor.HttpContext!.Response.Cookies.Delete(name, new CookieOptions
+        {
+            Path = "/",
+            Secure = true,
+            SameSite = SameSiteMode.None
+        });
+    }
+    #endregion
 }
